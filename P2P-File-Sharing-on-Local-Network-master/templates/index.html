@@ -1,0 +1,260 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>P2P File Sharing || Utkarsh Srivastav</title>
+
+  <!-- Tailwind CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- QR lib -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrious/4.0.2/qrious.min.js" defer></script>
+
+  <style>
+    :root {
+      --bg: linear-gradient(135deg, rgba(14, 165, 233, 0.06), rgba(99, 102, 241, 0.06));
+      --glass: rgba(255, 255, 255, 0.55);
+      --glass-border: rgba(255, 255, 255, 0.45);
+      --text: #0f172a;
+    }
+
+    .dark-mode {
+      --bg: linear-gradient(135deg, rgba(2, 6, 23, 0.75), rgba(15, 23, 42, 0.7));
+      --glass: rgba(6, 8, 15, 0.6);
+      --glass-border: rgba(255, 255, 255, 0.06);
+      --text: #e6eef8;
+    }
+
+    body {
+      background: var(--bg);
+      min-height: 100vh;
+      -webkit-font-smoothing: antialiased;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+      color: var(--text);
+    }
+
+    .glass {
+      background: var(--glass);
+      backdrop-filter: blur(10px) saturate(120%);
+      -webkit-backdrop-filter: blur(10px) saturate(120%);
+      border: 1px solid var(--glass-border);
+      box-shadow: 0 8px 30px rgba(2, 6, 23, 0.08);
+    }
+
+    .faded {
+      color: #6b7280;
+    }
+
+    .rounded-3xl {
+      border-radius: 1.25rem;
+    }
+
+    .small {
+      font-size: 0.85rem;
+    }
+
+    .btn {
+      transition: transform .12s ease, box-shadow .12s ease;
+    }
+
+    .btn:active {
+      transform: translateY(1px);
+    }
+
+    /* Toast */
+    #toastBox {
+      z-index: 9999;
+    }
+
+    .toast {
+      background: white;
+      border-left: 4px solid;
+      padding: 10px 14px;
+      border-radius: 8px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+      font-size: 0.9rem;
+      animation: slideIn .28s ease;
+      max-width: 320px;
+    }
+
+    .dark-mode .toast {
+      background: rgba(15, 23, 42, 0.92);
+      color: #e6eef8;
+      box-shadow: 0 6px 18px rgba(0, 0, 0, 0.45);
+    }
+
+    .toast.success {
+      border-color: #10b981;
+    }
+
+    .toast.error {
+      border-color: #ef4444;
+    }
+
+    .toast.info {
+      border-color: #3b82f6;
+    }
+
+    @keyframes slideIn {
+      from {
+        opacity: 0;
+        transform: translateX(20px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateX(0);
+      }
+    }
+
+    /* Activity panel */
+    #activityPanel {
+      width: 380px;
+      right: -420px;
+      transition: right 0.28s ease;
+      top: 0;
+      height: 100vh;
+      z-index: 60;
+    }
+
+    #activityPanel.open {
+      right: 0;
+    }
+
+    .activity-item {
+      border-bottom: 1px solid rgba(0, 0, 0, 0.04);
+      padding: 12px;
+    }
+
+    .dark-mode .activity-item {
+      border-color: rgba(236, 232, 232, 0.04);
+    }
+
+    /* QR modal */
+    .qr-backdrop {
+      background: rgba(0, 0, 0, 0.45);
+      position: fixed;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 70;
+    }
+
+    .hidden {
+      display: none;
+    }
+  </style>
+</head>
+
+<body>
+  <!-- Toast container -->
+  <div id="toastBox" class="fixed top-5 right-5 space-y-3"></div>
+
+  <!-- Activity side panel -->
+  <aside id="activityPanel" class="fixed glass p-4">
+    <div class="flex items-center justify-between mb-3">
+      <h3 class="font-semibold">Activity Log</h3>
+      <div>
+        <button id="clearLog" class="text-xs faded mr-2">Clear</button>
+        <button id="closeActivity" class="text-xs">Close</button>
+      </div>
+    </div>
+    <div id="activityList" class="overflow-auto" style="max-height:calc(100vh - 80px)"></div>
+  </aside>
+
+  <!-- QR Modal (hidden by default) -->
+  <div id="qrModal" class="hidden qr-backdrop">
+    <div class="glass rounded-2xl p-6 text-center">
+      <h4 class="font-medium mb-2">Share Link (QR)</h4>
+      <canvas id="qrCanvas"></canvas>
+      <div class="mt-4 flex gap-2 justify-center">
+        <button id="downloadQR" class="btn px-3 py-1 rounded bg-indigo-600 text-white small">Download</button>
+        <button id="closeQR" class="btn px-3 py-1 rounded border small">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="max-w-6xl mx-auto p-6">
+    <header class="mb-6 flex items-center justify-between">
+      <div>
+        <h1 class="text-3xl font-semibold">P2P File Sharing — Local Network</h1>
+        <p class="text-sm faded mt-1">Drag & drop files or click to upload. Files are shared with devices on the same
+          LAN.</p>
+      </div>
+
+      <div class="flex items-center gap-3">
+        <!-- <button id="toggleTheme" class="btn px-3 py-1 rounded ghost small">Toggle Dark</button> -->
+        <button id="openActivity" class="btn px-3 py-1 rounded small">Activity</button>
+        <label class="faded small mr-1">Sound</label>
+        <input id="soundToggle" type="checkbox" checked />
+      </div>
+    </header>
+
+    <main class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <!-- Upload + Files -->
+      <section class="lg:col-span-2 glass rounded-3xl p-6">
+        <div class="flex items-center justify-between mb-4">
+          <h2 class="text-xl font-medium">Files on this device</h2>
+          <div class="text-sm faded" id="serverInfo">Loading server info...</div>
+        </div>
+
+        <div id="dropZone"
+          class="border-2 border-dashed border-indigo-200 rounded-lg p-6 mb-4 hover:bg-indigo-50/20 transition cursor-pointer">
+          <div class="flex items-center gap-4">
+            <div class="w-12 h-12 bg-indigo-100 rounded-lg flex items-center justify-center">📁</div>
+            <div>
+              <div class="font-medium">Drag & drop a file here</div>
+              <div class="text-sm faded">or <button id="clickToChoose" class="text-indigo-600 underline small">click to
+                  choose</button></div>
+            </div>
+            <input id="fileInput" type="file" class="hidden" />
+          </div>
+        </div>
+
+        <div id="progressContainer" class="hidden mb-4">
+          <div class="text-sm mb-1">Uploading: <span id="progressName"></span></div>
+          <div class="w-full bg-slate-200 rounded h-3 overflow-hidden">
+            <div id="progressBar" class="h-3 rounded"
+              style="width:0%; background: linear-gradient(90deg,#7c3aed,#06b6d4)"></div>
+          </div>
+        </div>
+
+        <div class="overflow-x-auto">
+          <table class="w-full text-left">
+            <thead class="text-slate-600 text-sm">
+              <tr>
+                <th class="py-2">Name</th>
+                <th class="py-2">Size</th>
+                <th class="py-2">Last Modified</th>
+                <th class="py-2">Actions</th>
+              </tr>
+            </thead>
+            <tbody id="filesTbody" class="text-sm text-slate-800"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- Peers -->
+      <aside class="glass rounded-3xl p-6">
+        <h3 class="text-lg font-medium mb-2">Peers on LAN</h3>
+        <p class="text-sm faded mb-3">This file sharing platform lets you upload documents, images, videos and any other
+          file securely in just one click. You can generate a unique link and share it instantly or simply scan the QR
+          code for quick access. The interface is simple and fast, with features like dark mode, sound alerts on
+          uploads, and an activity log to track your recent actions. It is designed to make sharing easy, safe and
+          convenient without needing login or storage access on the receiver’s side.</p>
+
+        <ul id="peersList" class="space-y-3"></ul>
+      </aside>
+    </main>
+
+    <footer class="mt-6 text-center text-xs faded">P2P File Sharing App — Created By Utkarsh Srivastav</footer>
+  </div>
+
+  <!-- core script (served from /static/) -->
+  <script src="/static/script.js" defer></script>
+</body>
+
+</html>
