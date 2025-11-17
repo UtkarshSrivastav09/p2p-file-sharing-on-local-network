@@ -198,7 +198,15 @@
       <section class="lg:col-span-2 glass rounded-3xl p-6">
         <div class="flex items-center justify-between mb-4">
           <h2 class="text-xl font-medium">Files on this device</h2>
-          <div class="text-sm faded" id="serverInfo">Loading server info...</div>
+          <div class="text-sm faded flex items-center gap-4">
+            <div id="serverInfo">Loading server info...</div>
+
+            <!-- Storage Used (Option A - Minimal Text) -->
+            <div id="storageCard" class="text-sm">
+              <span class="faded small">Storage Used:</span>
+              <span id="storageUsed" class="font-semibold ml-2">Loading...</span>
+            </div>
+          </div>
         </div>
 
         <div id="dropZone"
@@ -255,6 +263,48 @@
 
   <!-- core script (served from /static/) -->
   <script src="/static/script.js" defer></script>
+
+  <!-- Small storage UI updater (Option A) -->
+  <script>
+    // Fetch storage and update #storageUsed
+    async function fetchStorageAndUpdate() {
+      try {
+        const res = await fetch('/api/storage');
+        if (!res.ok) {
+          throw new Error('Failed to fetch storage');
+        }
+        const json = await res.json();
+        const usedHuman = json.used_human ?? humanReadable(json.used);
+        document.getElementById('storageUsed').innerText = usedHuman;
+      } catch (err) {
+        document.getElementById('storageUsed').innerText = '—';
+        console.debug('storage fetch error', err);
+      }
+    }
+
+    // fallback human readable (in case server doesn't send used_human)
+    function humanReadable(bytes) {
+      if (bytes === 0) return '0 B';
+      const k = 1024;
+      const sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
+      const i = Math.floor(Math.log(bytes) / Math.log(k));
+      return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      // initial load
+      fetchStorageAndUpdate();
+
+      // refresh every 5s
+      setInterval(fetchStorageAndUpdate, 5000);
+
+      // Optional: if your /static/script.js dispatches a custom event after uploads,
+      // we listen and update immediately. (If your script doesn't dispatch this, nothing happens.)
+      window.addEventListener('fileUploaded', () => {
+        fetchStorageAndUpdate();
+      });
+    });
+  </script>
 </body>
 
 </html>

@@ -73,10 +73,41 @@ async def api_files():
     return files
 
 
+# ----------------- NEW: Storage Used API -----------------
+def _human_readable_size(num_bytes: int) -> str:
+    # Simple human-readable conversion
+    step = 1024.0
+    if num_bytes < step:
+        return f"{num_bytes} B"
+    for unit in ["KB", "MB", "GB", "TB"]:
+        num_bytes /= step
+        if num_bytes < step:
+            return f"{num_bytes:.2f} {unit}"
+    return f"{num_bytes:.2f} PB"
+
+
+@app.get("/api/storage")
+async def api_storage():
+    total = 0
+    # ensure upload dir exists
+    os.makedirs(UPLOAD_DIR, exist_ok=True)
+    for f in os.listdir(UPLOAD_DIR):
+        path = os.path.join(UPLOAD_DIR, f)
+        if os.path.isfile(path):
+            try:
+                total += os.path.getsize(path)
+            except OSError:
+                continue
+    return {"used": total, "used_human": _human_readable_size(total)}
+# --------------------------------------------------------
+
+
 @app.post("/uploadfile/")
 async def upload_file(file: UploadFile = File(...)):
     filename = os.path.basename(file.filename)
     dest = os.path.join(UPLOAD_DIR, filename)
+    # ensure upload dir exists
+    os.makedirs(UPLOAD_DIR, exist_ok=True)
     with open(dest, "wb") as buffer:
         shutil.copyfileobj(file.file, buffer)
     return RedirectResponse(url="/", status_code=303)
