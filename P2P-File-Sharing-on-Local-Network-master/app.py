@@ -188,7 +188,7 @@ def create_app():
     os.makedirs(UPLOAD_DIR, exist_ok=True)
     local_ip = get_local_ip()
     app.state.local_ip = local_ip
-    print(f"Server running at http://{local_ip}:{APP_PORT}")
+    print(f"----> Server running at http://{local_ip}:{APP_PORT}")
     app.state.stop_event = start_peer_threads(local_ip)
     return app
 

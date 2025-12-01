@@ -109,6 +109,20 @@
       }
     }
 
+    @keyframes spin-slow {
+      from {
+        transform: rotate(0deg);
+      }
+
+      to {
+        transform: rotate(360deg);
+      }
+    }
+
+    .before\:animate-spin-slow::before {
+      animation: spin-slow 6s linear infinite;
+    }
+
     /* Activity panel */
     #activityPanel {
       width: 380px;
@@ -258,7 +272,17 @@
       </aside>
     </main>
 
-    <footer class="mt-6 text-center text-xs faded">P2P File Sharing App — Created By Utkarsh Srivastav</footer>
+    <footer class="mt-12 relative py-5 text-center text-sm text-gray-300 bg-gray-900 rounded-xl overflow-hidden">
+      <div class="absolute inset-0 rounded-xl border border-transparent 
+        before:absolute before:inset-0 before:rounded-xl
+        before:border-[3px] before:border-transparent 
+        before:bg-[conic-gradient(from_0deg,rgba(99,102,241,0.7),rgba(236,72,153,0.7),rgba(139,92,246,0.7),rgba(99,102,241,0.7))]
+        before:animate-spin-slow before:-z-10 opacity-40">
+      </div>
+
+      <p class="font-bold tracking-wide">P2P File Sharing App</p>
+      <p class="text-xs opacity-130 mt-1">Created ❤️ by <span class="text-white">Utkarsh Srivastav</span></p>
+    </footer>
   </div>
 
   <!-- core script (served from /static/) -->

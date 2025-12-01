@@ -1,3 +1,7 @@
+<!-- Start Cloudflare to connect through different devices or network -->
+<!-- "C:\Program Files (x86)\cloudflared\cloudflared.exe" tunnel --url http://localhost:8000 -->
+
+
 # P2P File Sharing on Local Network
 <hr/>
 
